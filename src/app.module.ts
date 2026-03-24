@@ -14,8 +14,7 @@ import 'dotenv/config';
       envFilePath: '.env',
     }),
     MongooseModule.forRoot(
-      process.env.MONGODB_URI ??
-        `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASS}@cluster0.jedxf.mongodb.net`,
+      `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASS}@cluster0.jedxf.mongodb.net`,
     ),
     MonitoringModule,
   ],
