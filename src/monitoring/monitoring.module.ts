@@ -4,6 +4,10 @@ import { MonitoringController } from './monitoring.controller';
 import { MonitoringService } from './monitoring.service';
 import { Screenshot, ScreenshotSchema } from './schemas/screenshot.schema';
 import { TrackedApp, TrackedAppSchema } from './schemas/tracked-app.schema';
+import { PlayStoreBrowserService } from './services/play-store-browser.service';
+import { PlayStoreCaptureService } from './services/play-store-capture.service';
+import { ScreenshotsService } from './services/screenshots.service';
+import { TrackedAppsService } from './services/tracked-apps.service';
 
 @Module({
   imports: [
@@ -13,6 +17,12 @@ import { TrackedApp, TrackedAppSchema } from './schemas/tracked-app.schema';
     ]),
   ],
   controllers: [MonitoringController],
-  providers: [MonitoringService],
+  providers: [
+    PlayStoreBrowserService,
+    PlayStoreCaptureService,
+    ScreenshotsService,
+    TrackedAppsService,
+    MonitoringService,
+  ],
 })
 export class MonitoringModule {}
