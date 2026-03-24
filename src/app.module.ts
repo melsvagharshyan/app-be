@@ -14,7 +14,7 @@ import { MonitoringModule } from './monitoring/monitoring.module';
     }),
     MongooseModule.forRoot(
       process.env.MONGODB_URI ??
-        `mongodb+srv://${'melsvagharshyan18'}:${'mels7878'}@cluster0.jedxf.mongodb.net`,
+        `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASS}@cluster0.jedxf.mongodb.net/myAppDB?retryWrites=true&w=majority&authSource=admin`,
     ),
     MonitoringModule,
   ],
