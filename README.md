@@ -1,98 +1,121 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# App backend (NestJS)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+REST API for tracking Google Play Store listings: store apps to monitor, capture full-page screenshots on a schedule (or on demand), and persist images on Cloudinary with metadata in MongoDB.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Requirements
 
-## Description
+- **Node.js** (LTS recommended)
+- **pnpm** (`corepack enable` or install from [pnpm.io](https://pnpm.io))
+- **MongoDB Atlas** credentials (the app connects using the URI configured in `src/app.module.ts`)
+- **Cloudinary** account (upload/delete API)
+- **Chrome or Chromium** for Puppeteer (or set `PUPPETEER_EXECUTABLE_PATH` to a browser binary)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Environment variables
 
-## Project setup
+Create a `.env` file in the project root (same folder as `package.json`):
 
-```bash
-$ pnpm install
-```
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `MONGODB_USER` | Yes | MongoDB Atlas username |
+| `MONGODB_PASS` | Yes | MongoDB Atlas password |
+| `CLOUDINARY_CLOUD_NAME` | Yes | Cloudinary cloud name |
+| `CLOUDINARY_API_KEY` | Yes | Cloudinary API key |
+| `CLOUDINARY_API_SECRET` | Yes | Cloudinary API secret |
+| `PORT` | No | HTTP port (default `3000`) |
+| `MONITOR_INTERVAL_MINUTES` | No | How often the global scheduler wakes for active apps (default `30`; minimum `1`) |
+| `PUPPETEER_EXECUTABLE_PATH` | No | Optional path to Chrome/Chromium (useful in Docker/Linux) |
 
-## Compile and run the project
+The server uses `dotenv` and `@nestjs/config` with `envFilePath: '.env'`.
+
+## Install and run
 
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+pnpm install
 ```
 
-## Run tests
+Development (watch mode):
 
 ```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+pnpm run start:dev
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Production build and run:
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+pnpm run build
+pnpm run start:prod
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+The app listens on `http://localhost:<PORT>` (default `3000`). CORS is enabled for browser clients. Requests are validated with `class-validator` (`whitelist` + `forbidNonWhitelisted`).
 
-## Resources
+## How monitoring works
 
-Check out a few resources that may come in handy when working with NestJS:
+- On startup, a **background job** runs immediately and then every `MONITOR_INTERVAL_MINUTES` minutes.
+- For each **active** tracked app, the service checks the **last screenshot time** in the database. A new capture runs only if at least `intervalMinutes` (per app, default 30) have passed since that time.
+- **Manual capture** (`POST /apps/:id/capture`) bypasses that interval and captures immediately.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+Screenshots are taken with Puppeteer (Play Store URL → PNG → Cloudinary). The browser is shared across captures and is restarted on certain transient connection errors.
 
-## Support
+## HTTP API
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+Base URL: `http://localhost:<PORT>` (no global prefix).
 
-## Stay in touch
+### Root
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/` | Simple health/hello response |
+
+### Tracked apps (`apps`)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/apps` | List all tracked apps (newest first) |
+| `POST` | `/apps` | Create a tracked app |
+| `PATCH` | `/apps/:id` | Update tracked app fields |
+| `DELETE` | `/apps/:id` | Delete app and its screenshots (Cloudinary + DB) |
+| `POST` | `/apps/:id/capture` | Capture screenshot now for this app |
+| `GET` | `/apps/:id/screenshots` | List screenshots for this app (newest first) |
+
+### `POST /apps` body (JSON)
+
+| Field | Type | Required | Notes |
+|-------|------|----------|--------|
+| `name` | string | Yes | Display name |
+| `playStoreUrl` | string | Yes | Valid URL (Play Store listing) |
+| `isActive` | boolean | No | Default `true` |
+| `intervalMinutes` | integer | No | Per-app minimum interval between automatic captures (default `30`, min `1`, max `1440`) |
+
+### `PATCH /apps/:id` body (JSON)
+
+All fields optional: `name`, `playStoreUrl`, `isActive`, `intervalMinutes` (same constraints as above).
+
+### Example: create and trigger capture
+
+```bash
+curl -s -X POST http://localhost:3000/apps \
+  -H "Content-Type: application/json" \
+  -d '{"name":"My App","playStoreUrl":"https://play.google.com/store/apps/details?id=com.example.app"}'
+
+curl -s -X POST http://localhost:3000/apps/<APP_ID>/capture
+```
+
+Replace `<APP_ID>` with the `_id` returned from the create response.
+
+## Tests and lint
+
+```bash
+pnpm run test
+pnpm run test:e2e
+pnpm run lint
+```
+
+## Project layout (monitoring)
+
+- `src/monitoring/monitoring.controller.ts` — HTTP routes under `/apps`
+- `src/monitoring/monitoring.service.ts` — Scheduler and orchestration
+- `src/monitoring/services/` — Browser (Puppeteer), Play Store capture, screenshots DB, tracked apps CRUD
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Private / UNLICENSED (see `package.json`).
