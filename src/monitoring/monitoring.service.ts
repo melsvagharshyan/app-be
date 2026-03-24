@@ -184,7 +184,41 @@ export class MonitoringService implements OnModuleInit {
       await this.disposeBrowser();
     }
 
-    const launchArgs = ['--no-sandbox', '--disable-setuid-sandbox'];
+    const launchArgs = [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+    ];
+
+    const executableCandidates = [
+      process.env.PUPPETEER_EXECUTABLE_PATH,
+      '/usr/bin/chromium-browser',
+      '/usr/bin/chromium',
+      '/usr/bin/google-chrome-stable',
+      '/opt/google/chrome/chrome',
+    ].filter((candidate): candidate is string => Boolean(candidate));
+
+    for (const executablePath of executableCandidates) {
+      try {
+        this.browser = await puppeteer.launch({
+          headless: true,
+          executablePath,
+          args: launchArgs,
+        });
+        this.browser.on('disconnected', () => {
+          this.logger.warn('Puppeteer browser disconnected.');
+          this.browser = null;
+        });
+        this.logger.log(
+          `Puppeteer launched using executable path: ${executablePath}`,
+        );
+        return this.browser;
+      } catch (pathError) {
+        this.logger.warn(
+          `Failed to launch browser from ${executablePath}. ${(pathError as Error).message}`,
+        );
+      }
+    }
 
     try {
       this.browser = await puppeteer.launch({
@@ -204,17 +238,22 @@ export class MonitoringService implements OnModuleInit {
       );
     }
 
-    this.browser = await puppeteer.launch({
-      headless: true,
-      args: launchArgs,
-    });
-    this.browser.on('disconnected', () => {
-      this.logger.warn('Puppeteer browser disconnected.');
-      this.browser = null;
-    });
-    this.logger.log('Puppeteer launched using Puppeteer-managed browser.');
-
-    return this.browser;
+    try {
+      this.browser = await puppeteer.launch({
+        headless: true,
+        args: launchArgs,
+      });
+      this.browser.on('disconnected', () => {
+        this.logger.warn('Puppeteer browser disconnected.');
+        this.browser = null;
+      });
+      this.logger.log('Puppeteer launched using Puppeteer-managed browser.');
+      return this.browser;
+    } catch (defaultError) {
+      throw new Error(
+        `Browser launch failed. Install Chromium/Chrome in the container or set PUPPETEER_EXECUTABLE_PATH. Original error: ${(defaultError as Error).message}`,
+      );
+    }
   }
 
   private async captureAppScreenshotInternal(
