@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MonitoringModule } from './monitoring/monitoring.module';
+import 'dotenv/config';
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { MonitoringModule } from './monitoring/monitoring.module';
     }),
     MongooseModule.forRoot(
       process.env.MONGODB_URI ??
-        `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASS}@cluster0.jedxf.mongodb.net/myAppDB?retryWrites=true&w=majority&authSource=admin`,
+        `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASS}@cluster0.jedxf.mongodb.net`,
     ),
     MonitoringModule,
   ],

@@ -12,6 +12,7 @@ import { CreateTrackedAppDto } from './dto/create-tracked-app.dto';
 import { UpdateTrackedAppDto } from './dto/update-tracked-app.dto';
 import { Screenshot, ScreenshotDocument } from './schemas/screenshot.schema';
 import { TrackedApp, TrackedAppDocument } from './schemas/tracked-app.schema';
+import 'dotenv/config';
 
 @Injectable()
 export class MonitoringService implements OnModuleInit {
